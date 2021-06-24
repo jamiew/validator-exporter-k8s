@@ -79,7 +79,7 @@ def try_float(v):
 
 def read_file(command):
   print(f"read_File command={command}")
-  dict = {"output": "I am the output\nlol second line\nok more"}
+  dict = {"output": str.encode("I am the output\nlol second line\nok more")}
   obj = namedtuple("ObjectName", dict.keys())(*dict.values())
   return obj
 
@@ -104,7 +104,6 @@ def get_facts():
   split = out.output.split(b"\n")
   print(split)
   print("__________")
-  return 'no'
 
   for line in out.output.split(b"\n"):
     strline = line.decode('utf-8')
