@@ -1,6 +1,6 @@
 #!/bin/bash
 
-image="miner-exporter"
+image="validator-exporter"
 # tag="latest"
 
 docker build -t "$image" .
