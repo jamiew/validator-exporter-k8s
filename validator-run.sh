@@ -1,8 +1,9 @@
 #!/bin/bash
 
 container_name="validator"
-image="quay.io/team-helium/validator:latest-validator-amd64"
-data_dir="$HOME/validator_data"
+# image="quay.io/team-helium/validator:latest-validator-amd64"
+image="quay.io/team-helium/validator:latest-val-amd64"
+data_dir="$HOME/validator_data_testnet"
 
 docker pull $image
 docker rm -f $container_name
