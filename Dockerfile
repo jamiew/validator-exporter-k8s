@@ -1,5 +1,6 @@
-FROM python:3-buster
-LABEL org.opencontainers.image.source https://github.com/tedder/miner_exporter
+# FROM python:3-buster
+FROM python:3-alpine
+LABEL org.opencontainers.image.source https://github.com/jamiew/validator-exporter
 ENV PYTHONUNBUFFERED=1
 EXPOSE 9825
 
