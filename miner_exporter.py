@@ -288,8 +288,6 @@ def collect_hbbft_performance(miner_name):
     c = [x.strip() for x in line.split(',')]
     # samples:
 
-    have_data = False
-
     if len(c) == 7 and miner_name == c[0]:
       # name,bba_completions,seen_votes,last_bba,last_seen,tenure,penalty
       # great-clear-chinchilla,5/5,237/237,0,0,2.91,2.91
@@ -319,7 +317,7 @@ def collect_hbbft_performance(miner_name):
       # empty line
       pass
     else:
-      log.debug(f"wrong len ({len(c)}) for hbbft: {c}")
+      log.debug(f"wrong len ({len(c)}) + miner_name ({miner_name}) for hbbft: {c}")
 
     # always set these, that way they get reset when out of CG
     HBBFT_PERF.labels('hbbft_perf','Penalty', miner_name).set(hval.get('pen_val', 0))
