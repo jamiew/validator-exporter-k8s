@@ -21,11 +21,13 @@ log.setLevel(logging.DEBUG)
 print("hello from miner_exporter.py")
 
 # where the validator container stashes its stats files
-STATS_DIR = "/var/data/stats"
+STATS_DIR = os.environ.get('STATS_DIR', '/var/data/stats')
+print(f"STATS_DIR={STATS_DIR}")
 
 # time to sleep between scrapes
 UPDATE_PERIOD = int(os.environ.get('UPDATE_PERIOD', 30))
 VALIDATOR_CONTAINER_NAME = os.environ.get('VALIDATOR_CONTAINER_NAME', 'validator')
+
 # for testnet, https://testnet-api.helium.wtf/v1
 API_BASE_URL = os.environ.get('API_BASE_URL', 'https://api.helium.io/v1')
 
@@ -81,16 +83,16 @@ def try_float(v):
   return v
 
 def read_file(command):
-  print(f"read_Fileffffff dir={STATS_DIR} command={command}")
+  print(f"read_file dir={STATS_DIR} command={command}")
   filename = STATS_DIR + "/" + command
   text = ""
   try:
     with open(filename, 'r') as f:
       text = f.read()
-      # FIXME kind of faking an object like what's returned by old shell cmd
   except FileNotFoundError as ex:
     log.error(f"could not find file {filename}", exc_info=ex)
   finally:
+    # FIXME kind of faking an object like what's returned by old shell cmd
     dict = {"output": str.encode(text)}
     obj = namedtuple("ObjectName", dict.keys())(*dict.values())
     return obj
@@ -99,33 +101,20 @@ def read_file(command):
 def get_facts():
   if miner_facts:
     return miner_facts
-  #miner_facts = {
-  #  'name': None,
-  #  'address': None
-  #}
-  # sample output:
+
+  # example output:
   # {pubkey,"1YBkf..."}.
   # {onboarding_key,"1YBkf..."}.
   # {animal_name,"one-two-three"}.
   out = read_file('print_keys')
-  log.debug('okkkkkkk')
-  log.debug(type(out))
 
-  log.debug(out)
   # FIXME how to properly check for blank in python?
+  # should we doing this somewhere else?
   if out == "" or type(out) == str:
     print(f"no data for print_keys, aborting")
     return
 
-  log.debug(out.output)
   printkeys = {}
-  print("__________")
-  print(type(out.output))
-  # split = out.output.split(b"\n")
-  split = out.output.split(b"\n")
-  print(split)
-  print("__________")
-
   for line in out.output.split(b"\n"):
     strline = line.decode('utf-8')
     print("*****")
@@ -167,7 +156,7 @@ def stats():
   collect_ledger_validators(hotspot_name_str)
   collect_peer_book(hotspot_name_str)
   collect_hbbft_performance(hotspot_name_str)
-  collect_balance(docker_container, miner_facts['address'], hotspot_name_str)
+  collect_balance(miner_facts['address'], hotspot_name_str)
 
 def safe_get_json(url):
   try:
@@ -441,7 +430,6 @@ if __name__ == '__main__':
       log.error(f"stats loop failed.", exc_info=ex)
     # except docker.errors.APIError as ex:
     #   log.error(f"stats loop failed with a docker error.", exc_info=ex)
-
 
     # sleep 30 seconds
     time.sleep(UPDATE_PERIOD)
