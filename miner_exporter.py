@@ -20,6 +20,9 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 print("hello from miner_exporter.py")
 
+# where the validator container stashes its stats files
+STATS_DIR = "/var/data/stats"
+
 # time to sleep between scrapes
 UPDATE_PERIOD = int(os.environ.get('UPDATE_PERIOD', 30))
 VALIDATOR_CONTAINER_NAME = os.environ.get('VALIDATOR_CONTAINER_NAME', 'validator')
@@ -78,10 +81,20 @@ def try_float(v):
   return v
 
 def read_file(command):
-  print(f"read_File command={command}")
-  dict = {"output": str.encode("I am the output\nlol second line\nok more")}
-  obj = namedtuple("ObjectName", dict.keys())(*dict.values())
-  return obj
+  print(f"read_Fileffffff dir={STATS_DIR} command={command}")
+  filename = STATS_DIR + "/" + command
+  text = ""
+  try:
+    with open(filename, 'r') as f:
+      text = f.read()
+      # FIXME kind of faking an object like what's returned by old shell cmd
+  except FileNotFoundError as ex:
+    log.error(f"could not find file {filename}", exc_info=ex)
+  finally:
+    dict = {"output": str.encode(text)}
+    obj = namedtuple("ObjectName", dict.keys())(*dict.values())
+    return obj
+
 
 def get_facts():
   if miner_facts:
@@ -90,11 +103,19 @@ def get_facts():
   #  'name': None,
   #  'address': None
   #}
-  out = read_file('miner print_keys')
   # sample output:
   # {pubkey,"1YBkf..."}.
   # {onboarding_key,"1YBkf..."}.
   # {animal_name,"one-two-three"}.
+  out = read_file('print_keys')
+  log.debug('okkkkkkk')
+  log.debug(type(out))
+
+  log.debug(out)
+  # FIXME how to properly check for blank in python?
+  if out == "" or type(out) == str:
+    print(f"no data for print_keys, aborting")
+    return
 
   log.debug(out.output)
   printkeys = {}
@@ -156,8 +177,6 @@ def safe_get_json(url):
       return
     retj = ret.json()
     return retj
-
-
   except (requests.exceptions.SSLError, requests.exceptions.ConnectionError) as ex:
     log.error(f"error fetching {url}: {ex}")
     return
@@ -238,21 +257,21 @@ def collect_balance(addr, miner_name):
 
 def get_miner_name():
   # need to fix this. hotspot name really should only be queried once
-  out = read_file('miner info name')
+  out = read_file('info_name')
   log.debug(out.output)
   hotspot_name = out.output.decode('utf-8').rstrip("\n")
   return hotspot_name
 
 def collect_miner_height(miner_name):
   # grab the local blockchain height
-  out = read_file('miner info height')
+  out = read_file('info_height')
   log.debug(out.output)
   txt = out.output.decode('utf-8').rstrip("\n")
   VAL.labels('Height', miner_name).set(out.output.split()[1])
 
 def collect_in_consensus(miner_name):
   # check if currently in consensus group
-  out = read_file('miner info in_consensus')
+  out = read_file('info_in_consensus')
   incon_txt = out.output.decode('utf-8').rstrip("\n")
   incon = 0
   if incon_txt == 'true':
@@ -262,7 +281,7 @@ def collect_in_consensus(miner_name):
 
 def collect_block_age(miner_name):
   # collect current block age
-  out = read_file('miner info block_age')
+  out = read_file('info_block_age')
   ## transform into a number
   age_val = try_int(out.output.decode('utf-8').rstrip("\n"))
 
@@ -273,7 +292,7 @@ def collect_block_age(miner_name):
 hval = {}
 def collect_hbbft_performance(miner_name):
   # parse the hbbft performance table for the penalty field
-  out = read_file('miner hbbft perf --format csv')
+  out = read_file('hbbft_perf.csv')
   #print(out.output)
 
   for line in out.output.decode('utf-8').split("\n"):
@@ -325,7 +344,7 @@ def collect_hbbft_performance(miner_name):
 
 def collect_peer_book(miner_name):
   # peer book -s output
-  out = read_file('miner peer book -s --format csv')
+  out = read_file('peer_book.csv')
   # parse the peer book output
 
   # samples
@@ -364,7 +383,7 @@ def collect_peer_book(miner_name):
 
 def collect_ledger_validators(miner_name):
   # ledger validators output
-  out = read_file('miner ledger validators --format csv')
+  out = read_file('ledger_validators.csv')
   results = out.output.decode('utf-8').split("\n")
   # parse the ledger validators output
   for line in [x.rstrip("\r\n") for x in results]:
@@ -399,7 +418,7 @@ def collect_ledger_validators(miner_name):
 
 
 def collect_miner_version(miner_name):
-  out = read_file('miner_versions')
+  out = read_file('versions')
   results = out.output.decode('utf-8').split("\n")
   # sample output
   # $ docker exec validator miner versions
