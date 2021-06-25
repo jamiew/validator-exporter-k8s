@@ -17,12 +17,12 @@ from collections import namedtuple
 # remember, levels: debug, info, warning, error, critical. there is no trace.
 logging.basicConfig(format="%(filename)s:%(funcName)s:%(lineno)d:%(levelname)s\t%(message)s", level=logging.WARNING)
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
-print("hello from miner_exporter.py")
+log.setLevel(logging.INFO)
+log.info("miner_exporter starting up...!")
 
 # where the validator container stashes its stats files
 STATS_DIR = os.environ.get('STATS_DIR', '/var/data/stats')
-print(f"STATS_DIR={STATS_DIR}")
+log.info(f"STATS_DIR={STATS_DIR}")
 
 # time to sleep between scrapes
 UPDATE_PERIOD = int(os.environ.get('UPDATE_PERIOD', 30))
@@ -83,7 +83,7 @@ def try_float(v):
   return v
 
 def read_file(command):
-  print(f"read_file dir={STATS_DIR} command={command}")
+  log.debug(f"read_file dir={STATS_DIR} command={command}")
   filename = STATS_DIR + "/" + command
   text = ""
   try:
@@ -117,8 +117,6 @@ def get_facts():
   printkeys = {}
   for line in out.output.split(b"\n"):
     strline = line.decode('utf-8')
-    print("*****")
-    print(strline)
 
     # := requires py3.8
     if m := re.match(r'{([^,]+),"([^"]+)"}.', strline):
