@@ -2,7 +2,7 @@
 
 # external packages
 import prometheus_client
-import psutil
+#import psutil
 import requests
 import dateutil.parser
 
@@ -142,8 +142,8 @@ def stats():
 
   # collect total cpu and memory usage. Might want to consider just the docker
   # container with something like cadvisor instead
-  SYSTEM_USAGE.labels('CPU', hotspot_name_str).set(psutil.cpu_percent())
-  SYSTEM_USAGE.labels('Memory', hotspot_name_str).set(psutil.virtual_memory()[2])
+  #SYSTEM_USAGE.labels('CPU', hotspot_name_str).set(psutil.cpu_percent())
+  #SYSTEM_USAGE.labels('Memory', hotspot_name_str).set(psutil.virtual_memory()[2])
 
   # collect_container_run_time(docker_container, hotspot_name_str)
   collect_miner_version(hotspot_name_str)

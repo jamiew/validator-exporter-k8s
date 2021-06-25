@@ -1,4 +1,4 @@
 prometheus_client
-psutil
+# psutil
 python-dateutil
 requests
