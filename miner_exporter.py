@@ -2,12 +2,9 @@
 
 # external packages
 import prometheus_client
-#import psutil
 import requests
-import dateutil.parser
 
 # internal packages
-import datetime
 import time
 import os
 import re
@@ -37,9 +34,6 @@ ENABLE_RPC = os.environ.get('ENABLE_RPC', 0)
 
 # prometheus exporter types Gauge,Counter,Summary,Histogram,Info and Enum
 SCRAPE_TIME = prometheus_client.Summary('validator_scrape_time', 'Time spent collecting miner data')
-SYSTEM_USAGE = prometheus_client.Gauge('system_usage',
-                                       'Hold current system resource usage',
-                                       ['resource_type','validator_name'])
 CHAIN_STATS = prometheus_client.Gauge('chain_stats',
                               'Stats about the global chain', ['resource_type'])
 VAL = prometheus_client.Gauge('validator_height',
@@ -139,13 +133,6 @@ def get_facts():
 def stats():
   miner_facts = get_facts()
   hotspot_name_str = get_miner_name()
-
-  # collect total cpu and memory usage. Might want to consider just the docker
-  # container with something like cadvisor instead
-  #SYSTEM_USAGE.labels('CPU', hotspot_name_str).set(psutil.cpu_percent())
-  #SYSTEM_USAGE.labels('Memory', hotspot_name_str).set(psutil.virtual_memory()[2])
-
-  # collect_container_run_time(docker_container, hotspot_name_str)
   collect_miner_version(hotspot_name_str)
   collect_block_age(hotspot_name_str)
   collect_miner_height(hotspot_name_str)
@@ -167,38 +154,6 @@ def safe_get_json(url):
   except (requests.exceptions.SSLError, requests.exceptions.ConnectionError) as ex:
     log.error(f"error fetching {url}: {ex}")
     return
-
-def collect_container_run_time(docker_container, miner_name):
-  attrs = docker_container.attrs
-
-  # examples and other things we could track:
-  # "Created": "2021-05-18T22:11:48.962678927Z",
-  # "Id": "cd611b83a0f267a1000603db52aa2d21247a32cc195c9c2b8ebcade5d35cfe1a",
-  # "State": {
-  #   "Status": "running",
-  #   "Running": true,
-  #   "Paused": false,
-  #   "Restarting": false,
-  #   "OOMKilled": false,
-  #   "Dead": false,
-  #   "Pid": 4159823,
-  #   "ExitCode": 0,
-  #   "Error": "",
-  #   "StartedAt": "2021-05-18T22:11:49.50436001Z",
-  #   "FinishedAt": "0001-01-01T00:00:00Z"
-
-  now = datetime.datetime.now(datetime.timezone.utc)
-  if attrs:
-    if attrs.get("Created"):
-      create_time = attrs.get("Created")
-      create_dt = dateutil.parser.parse(create_time)
-      create_delta = (now-create_dt).total_seconds()
-      UPTIME.labels('create', miner_name).set(create_delta)
-    if attrs.get("State") and attrs["State"].get("StartedAt"):
-      start_time = attrs["State"]["StartedAt"]
-      start_dt = dateutil.parser.parse(start_time)
-      start_delta = (now-start_dt).total_seconds()
-      UPTIME.labels('start', miner_name).set(start_delta)
 
 def collect_chain_stats():
   api = safe_get_json(f'{API_BASE_URL}/blocks/height')
