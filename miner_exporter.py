@@ -132,7 +132,11 @@ def get_facts():
 @SCRAPE_TIME.time()
 def stats():
   miner_facts = get_facts()
+  print("miner_facts...")
+  print(miner_facts)
   hotspot_name_str = get_miner_name()
+  print("hotspot_name_str...")
+  print(hotspot_name_str)
   collect_miner_version(hotspot_name_str)
   collect_block_age(hotspot_name_str)
   collect_miner_height(hotspot_name_str)
