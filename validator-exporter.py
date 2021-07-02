@@ -15,7 +15,7 @@ from collections import namedtuple
 logging.basicConfig(format="%(filename)s:%(funcName)s:%(lineno)d:%(levelname)s\t%(message)s", level=logging.WARNING)
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
-log.info("miner_exporter starting up...!")
+log.info("validator-exporter starting up...!")
 
 # where the validator container stashes its stats files
 STATS_DIR = os.environ.get('STATS_DIR', '/var/data/stats')

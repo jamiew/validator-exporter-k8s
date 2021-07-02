@@ -1,6 +1,10 @@
-# miner\_exporter
+# validator-exporter
 
-Prometheus exporter for the [Helium miner (validator)](https://github.com/helium/miner). Using prometheus\_client, this code exposes metrics from the helium miner to a prometheus compatible server. 
+Forked from [tedder/miner_exporter](https://github.com/tedder/miner_exporter) - thank you for sharing your work.
+
+Prometheus exporter for a [Helium validator)](https://github.com/helium/miner), specifically one running inside a Kubernetes (k8s) cluster configured using [caseypugh/helium-kubernetes](https://github.com/caseypugh/helium-kubernetes). 
+
+Using `prometheus_client`, this app exposes consensus group- and performance-related metrics from the validator. Unlike @tedder's repository, which talks to the miner process directly using `docker exec`, this fork reads files saved to a shared volume (`/var/data/stats` by default). It's expected your `validator` container is regularly capturing and saving those stats a la `save-stats.sh`
 
 This is only the exporter, which still requires a **prometheus server** for data and **grafana** for the dashboard. Prometheus and Grafana servers can run on an external machine, the same machine as the miner, or possibly using a cloud service. The [helium\_miner\_grafana\_dashboard](https://github.com/tedder/helium_miner_grafana_dashboard) can be imported to Grafana.
 
@@ -8,15 +12,19 @@ Note [port 9825 is the 'reserved' port for this specific exporter](https://githu
 
 
 ## Running via Docker
+
 Using the docker file, you can run this with Docker or docker-compose! Both of these expose Prometheus on 9825, feel free to choose your own port. The images are hosted on both [GHCR](https://github.com/users/tedder/packages/container/package/miner_exporter) and [Dockerhub](https://hub.docker.com/r/tedder42/miner_exporter).
 
 ### Docker client
+
 ```
 docker run -p 9825:9825 --name miner_exporter -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/tedder/miner_exporter:latest
 ```
 
 ### Docker-Compose
+
 Using your existing docker-compose file, add the section for the exporter (below). When you're done, run `docker-compose up -d` as usual. That's it!
+
 ```
 version: "3"
 services:
