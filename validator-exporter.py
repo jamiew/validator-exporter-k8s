@@ -140,9 +140,9 @@ def stats():
   collect_miner_version(hotspot_name_str)
   collect_block_age(hotspot_name_str)
   collect_miner_height(hotspot_name_str)
-  collect_chain_stats()
+  # collect_chain_stats()
   collect_in_consensus(hotspot_name_str)
-  collect_ledger_validators(hotspot_name_str)
+  # collect_ledger_validators(hotspot_name_str)
   collect_peer_book(hotspot_name_str)
   collect_hbbft_performance(hotspot_name_str)
   collect_balance(miner_facts['address'], hotspot_name_str)
@@ -200,7 +200,6 @@ def collect_balance(addr, miner_name):
   #print('balance',balance)
   BALANCE.labels(miner_name).set(balance)
 
-
 def get_miner_name():
   # need to fix this. hotspot name really should only be queried once
   out = read_file('info_name')
@@ -211,8 +210,12 @@ def get_miner_name():
 def collect_miner_height(miner_name):
   # grab the local blockchain height
   out = read_file('info_height')
-  log.debug(out.output)
+  log.info(out.output)
   txt = out.output.decode('utf-8').rstrip("\n")
+  log.info(txt)
+  if not out.output:
+    log.warn("bad output from info_height")
+    return
   VAL.labels('Height', miner_name).set(out.output.split()[1])
 
 def collect_in_consensus(miner_name):
