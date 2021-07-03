@@ -14,12 +14,17 @@ from collections import namedtuple
 # remember, levels: debug, info, warning, error, critical. there is no trace.
 logging.basicConfig(format="%(filename)s:%(funcName)s:%(lineno)d:%(levelname)s\t%(message)s", level=logging.WARNING)
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG if os.environ.get('DEBUG') else logging.INFO)
 log.info("validator-exporter starting up...!")
 
 # where the validator container stashes its stats files
 STATS_DIR = os.environ.get('STATS_DIR', '/var/data/stats')
-log.info(f"STATS_DIR={STATS_DIR}")
+if not os.path.isdir(STATS_DIR):
+  log.error(f"STATS_DIR is not a real directory: {STATS_DIR}")
+  exit(1)
+else:
+  log.debug(f"STATS_DIR={STATS_DIR}")
+
 
 # time to sleep between scrapes
 UPDATE_PERIOD = int(os.environ.get('UPDATE_PERIOD', 30))
@@ -132,11 +137,7 @@ def get_facts():
 @SCRAPE_TIME.time()
 def stats():
   miner_facts = get_facts()
-  print("miner_facts...")
-  print(miner_facts)
   hotspot_name_str = get_miner_name()
-  print("hotspot_name_str...")
-  print(hotspot_name_str)
   collect_miner_version(hotspot_name_str)
   collect_block_age(hotspot_name_str)
   collect_miner_height(hotspot_name_str)
@@ -145,7 +146,7 @@ def stats():
   # collect_ledger_validators(hotspot_name_str)
   collect_peer_book(hotspot_name_str)
   collect_hbbft_performance(hotspot_name_str)
-  collect_balance(miner_facts['address'], hotspot_name_str)
+  # collect_balance(miner_facts['address'], hotspot_name_str)
 
 def safe_get_json(url):
   try:
@@ -210,9 +211,9 @@ def get_miner_name():
 def collect_miner_height(miner_name):
   # grab the local blockchain height
   out = read_file('info_height')
-  log.info(out.output)
+  log.debug(out.output)
   txt = out.output.decode('utf-8').rstrip("\n")
-  log.info(txt)
+  log.debug(txt)
   if not out.output:
     log.warn("bad output from info_height")
     return
@@ -225,7 +226,7 @@ def collect_in_consensus(miner_name):
   incon = 0
   if incon_txt == 'true':
     incon = 1
-  log.info(f"in consensus? {incon} / {incon_txt}")
+  log.debug(f"in consensus? {incon} / {incon_txt}")
   INCON.labels(miner_name).set(incon)
 
 def collect_block_age(miner_name):
@@ -374,7 +375,7 @@ def collect_miner_version(miner_name):
   for line in results:
     if m := re.match('^\*\s+([\d\.]+)(.*)', line):
       miner_version = m.group(1)
-      log.info(f"found miner version: {miner_version}")
+      log.debug(f"found miner version: {miner_version}")
       VALIDATOR_VERSION.labels(miner_name).info({'version': miner_version})
 
 
