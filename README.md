@@ -42,12 +42,13 @@ services:
 ```
 
 ## Running locally
-On the miner machine:
 
-install python3
+On the miner machine, install python3, then:
+
 ```
-pip install prometheus_client psutil docker
+pip install -r requirements.txt
 ```
+
 Details on the libraries:
 * [client\_python](https://github.com/prometheus/client_python)
 * [psutil](https://github.com/giampaolo/psutil)
@@ -57,9 +58,21 @@ Details on the libraries:
 ## Configuration
 
 The following have valid defaults, but you can change them:
+
 ```
 UPDATE_PERIOD  # seconds between scrapes, int
 VALIDATOR_CONTAINER_NAME # eg 'validator', string
 API_BASE_URL # URL for api access, string. For testnet, set to "https://testnet-api.helium.wtf/v1"
 ENABLE_RPC # opt in to using the RPC API with a truthy value (defaults to falsey value until `exec` calls are fully replaced).
 ```
+
+## Build on Docker Hub (CI)
+
+This repository has a GitHub action to automatically build a new image and push to [Docker Hub](https://hub.docker.com) on every commit (!). To configure on your own fork, create GitHub secrets for `DOCKER_USERNAME` and `DOCKER_PASSWORD`. For the password, use a [Docker Hub access token](https://hub.docker.com/settings/security)
+
+
+## License
+
+MIT
+
+Pull requests welcome!
