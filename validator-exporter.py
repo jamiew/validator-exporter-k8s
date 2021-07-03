@@ -138,7 +138,7 @@ def stats():
   collect_miner_height(hotspot_name_str)
   # collect_chain_stats()
   collect_in_consensus(hotspot_name_str)
-  # collect_ledger_validators(hotspot_name_str)
+  collect_ledger_validators(hotspot_name_str)
   collect_peer_book(hotspot_name_str)
   collect_hbbft_performance(hotspot_name_str)
   # collect_balance(miner_facts['address'], hotspot_name_str)
