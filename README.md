@@ -43,7 +43,7 @@ services:
 
 ## Running locally
 
-On the miner machine, install python3, then:
+On the miner machine, install python3, [setup a venv](https://docs.python.org/3/library/venv.html) if you'd like, then:
 
 ```
 pip install -r requirements.txt
@@ -53,6 +53,14 @@ Details on the libraries:
 * [client\_python](https://github.com/prometheus/client_python)
 * [psutil](https://github.com/giampaolo/psutil)
 * [docker](https://pypi.org/project/docker/)
+
+Then, if you're connected to a [helium-validators kubernetes cluster](https://github.com/caseypugh/helium-validators), you can do a quick test using:
+
+```
+./test-run.sh
+```
+
+This captures stats from the `validator-0` pod and then tries to serve them using our local `validator-exporter.py` prometheus endpoint
 
 
 ## Configuration
