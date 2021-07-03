@@ -22,9 +22,6 @@ STATS_DIR = os.environ.get('STATS_DIR', '/var/data/stats')
 if not os.path.isdir(STATS_DIR):
   log.error(f"STATS_DIR is not a real directory: {STATS_DIR}")
   exit(1)
-else:
-  log.debug(f"STATS_DIR={STATS_DIR}")
-
 
 # time to sleep between scrapes
 UPDATE_PERIOD = int(os.environ.get('UPDATE_PERIOD', 30))
@@ -107,10 +104,8 @@ def get_facts():
   # {animal_name,"one-two-three"}.
   out = read_file('print_keys')
 
-  # FIXME how to properly check for blank in python?
-  # should we doing this somewhere else?
   if out == "" or type(out) == str:
-    print(f"no data for print_keys, aborting")
+    log.warn(f"get_facts: no data for print_keys, aborting")
     return
 
   printkeys = {}
@@ -278,7 +273,7 @@ def collect_hbbft_performance(miner_name):
       # empty line
       pass
     else:
-      log.debug(f"wrong len ({len(c)}) + miner_name ({miner_name}) for hbbft: {c}")
+      log.debug(f"wrong len ({len(c)}) and wrong miner_name ({miner_name}) for hbbft: {c}")
 
     # always set these, that way they get reset when out of CG
     HBBFT_PERF.labels('hbbft_perf','Penalty', miner_name).set(hval.get('pen_val', 0))
@@ -324,7 +319,7 @@ def collect_peer_book(miner_name):
       # listen_addrs
       pass
     else:
-      log.warning(f"could not understand peer book line: {c}")
+      log.debug(f"could not understand peer book line: {c}")
 
   log.debug(f"sess: {sessions}")
   SESSIONS.labels('sessions', miner_name).set(sessions)
@@ -382,8 +377,8 @@ def collect_miner_version(miner_name):
 if __name__ == '__main__':
   prometheus_client.start_http_server(9825) # 9-VAL on your phone
   while True:
-    #log.warning("starting loop.")
     try:
+      log.info(f"Fetching stats from {STATS_DIR}...")
       stats()
     except ValueError as ex:
       log.error(f"stats loop failed.", exc_info=ex)
