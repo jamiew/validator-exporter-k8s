@@ -14,10 +14,15 @@ if [ ! -d "$dir" ]; then
   exit 1
 fi
 
-container="validator"
-namespace="helium"
-v="time kubectl exec $pod -c $container -n $namespace -- miner"
-echo "v=$v"
+# TODO turn this into a function
+if [ -z $KUBE ]; then
+  container="validator"
+  namespace="helium"
+  v="time kubectl exec $pod -c $container -n $namespace -- miner"
+else
+  v="time docker exec $container miner"
+fi
+echo "Running commands with: $v"
 
 # paste from k8s/validator-setup.sh here
 # forgive me for what i've done
