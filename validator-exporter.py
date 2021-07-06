@@ -141,7 +141,7 @@ def stats():
   collect_ledger_validators(hotspot_name_str)
   collect_peer_book(hotspot_name_str)
   collect_hbbft_performance(hotspot_name_str)
-  # collect_balance(miner_facts['address'], hotspot_name_str)
+  collect_balance(miner_facts['address'], hotspot_name_str)
 
 def safe_get_json(url):
   try:
@@ -172,11 +172,7 @@ def collect_chain_stats():
   CHAIN_STATS.labels('staked_validators').set(count_val)
 
 def collect_balance(addr, miner_name):
-  # should move pubkey to getfacts and then pass it in here
-  #out = read_file('miner print_keys')
-  #for line in out.output.decode('utf-8').split("\n"):
-  #  if 'pubkey' in line:
-  #    addr=line[9:60]
+  log.debug(f"collect_balance: making API request for addr={addr} miner_name={miner_name}...")
   api_validators = safe_get_json(f'{API_BASE_URL}/validators/{addr}')
   if not api_validators:
     log.error("validator fetch returned empty JSON")
@@ -188,12 +184,14 @@ def collect_balance(addr, miner_name):
 
   api_accounts = safe_get_json(f'{API_BASE_URL}/accounts/{owner}')
   if not api_accounts:
+    log.debug("No api_accounts?")
     return
   if not api_accounts.get('data') or not api_accounts['data'].get('balance'):
+    log.debug("api accounts missing data or balance?")
     return
   balance = float(api_accounts['data']['balance'])/1E8
-  #print(api_accounts)
-  #print('balance',balance)
+  log.debug(f'collect_balance api_accounts={api_accounts}')
+  log.debug(f'collect_balance balance={balance}')
   BALANCE.labels(miner_name).set(balance)
 
 def get_miner_name():
