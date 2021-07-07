@@ -154,8 +154,10 @@ def stats():
   collect_peer_book(hotspot_name_str)
   collect_hbbft_performance(hotspot_name_str)
   collect_balance(miner_facts['address'], hotspot_name_str)
+  collect_rewards(miner_facts['address'])
 
 def safe_get_json(url):
+  # TODO always debug this request - how long it took, response status code, response bytes
   try:
     ret = requests.get(url)
     if not ret.status_code == requests.codes.ok:
@@ -184,7 +186,6 @@ def collect_chain_stats():
   CHAIN_STATS.labels('staked_validators').set(count_val)
 
 def collect_balance(addr, miner_name):
-  log.debug(f"making API request for addr={addr} miner_name={miner_name}...")
   api_validators = safe_get_json(f'{API_BASE_URL}/validators/{addr}')
   if not api_validators:
     log.error("validator fetch returned empty JSON")
@@ -196,14 +197,30 @@ def collect_balance(addr, miner_name):
 
   api_accounts = safe_get_json(f'{API_BASE_URL}/accounts/{owner}')
   if not api_accounts:
-    log.debug("No api_accounts?")
+    log.warning(f"no api_accounts. bad result from Helium API? {api_accounts}")
     return
-  if not api_accounts.get('data') or not api_accounts['data'].get('balance'):
-    log.debug("api accounts missing data or balance?")
+  elif not api_accounts.get('data') or not api_accounts['data'].get('balance'):
+    log.debug(f"api_accounts missing data or balance {api_accounts}")
     return
+
   balance = float(api_accounts['data']['balance'])/1E8
   log.debug(f'balance={balance}')
   BALANCE.labels(owner, miner_name, POD_NAME, NODE_NAME).set(balance)
+
+def collect_rewards(addr):
+  url = f"{API_BASE_URL}/validators/{addr}/rewards"
+  log.debug(f'making request to {url}')
+  min_time = "2020-01-01"
+  max_time = "2050-01-01"
+  json = safe_get_json(f'{API_BASE_URL}/validators/{addr}&min_time={min_time}&max_time={max_time}')
+  if not json:
+    log.error(f"could not fetch validator rewards from Helium API. json={json}")
+    return
+  elif not json.get('data'):
+    log.error(f"response missing 'data' field json={json}")
+    return
+  rewards = json
+  # TODO finish me
 
 def get_miner_name():
   # need to fix this. hotspot name really should only be queried once
