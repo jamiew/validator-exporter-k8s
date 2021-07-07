@@ -233,7 +233,7 @@ def collect_block_age(miner_name):
   ## transform into a number
   age_val = try_int(out.output.decode('utf-8').rstrip("\n"))
 
-  if not out.output or (isinstance(age_val, str) and "Error" in age_val):
+  if not out.output or (isinstance(age_val, str) and ("Error" in age_val or "failed" in age_val)):
     log.warning(f"Bad output from block_age... age_val={age_val}")
     return
 
