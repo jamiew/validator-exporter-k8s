@@ -133,6 +133,9 @@ def get_facts():
 def stats():
   miner_facts = get_facts()
   hotspot_name_str = get_miner_name()
+  if not hotspot_name_str:
+    log.error("Hotspot name is missing; aborting")
+    return
   collect_miner_version(hotspot_name_str)
   collect_block_age(hotspot_name_str)
   collect_miner_height(hotspot_name_str)
@@ -197,18 +200,18 @@ def collect_balance(addr, miner_name):
 def get_miner_name():
   # need to fix this. hotspot name really should only be queried once
   out = read_file('info_name')
-  log.debug(out.output)
   hotspot_name = out.output.decode('utf-8').rstrip("\n")
+  if not hotspot_name or "Error" in hotspot_name or "failed" in hotspot_name or "not responding" in hotspot_name:
+    log.warning(f"Bad data for miner name hotspot_name={hotspot_name}")
+    return
   return hotspot_name
 
 def collect_miner_height(miner_name):
   # grab the local blockchain height
   out = read_file('info_height')
-  log.debug(out.output)
   txt = out.output.decode('utf-8').rstrip("\n")
-  log.debug(txt)
-  if not out.output:
-    log.warning("bad output from info_height")
+  if not txt or (isinstance(txt, str) and "Error" in txt or "failed" in txt):
+    log.warning("bad output from info_height: {out.output")
     return
   VAL.labels('Height', miner_name).set(out.output.split()[1])
 
