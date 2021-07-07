@@ -219,6 +219,8 @@ def collect_in_consensus(miner_name):
   # check if currently in consensus group
   out = read_file('info_in_consensus')
   incon_txt = out.output.decode('utf-8').rstrip("\n")
+  if not incon_txt or "failed" in incon_txt:
+    log.warning(f"Bad result from in_consensus={incon_txt}")
   incon = 0
   if incon_txt == 'true':
     incon = 1
