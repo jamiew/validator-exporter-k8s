@@ -105,7 +105,7 @@ def get_facts():
   out = read_file('print_keys')
 
   if out == "" or type(out) == str:
-    log.warn(f"get_facts: no data for print_keys, aborting")
+    log.warning(f"get_facts: no data for print_keys, aborting")
     return
 
   printkeys = {}
@@ -208,7 +208,7 @@ def collect_miner_height(miner_name):
   txt = out.output.decode('utf-8').rstrip("\n")
   log.debug(txt)
   if not out.output:
-    log.warn("bad output from info_height")
+    log.warning("bad output from info_height")
     return
   VAL.labels('Height', miner_name).set(out.output.split()[1])
 
@@ -227,6 +227,10 @@ def collect_block_age(miner_name):
   out = read_file('info_block_age')
   ## transform into a number
   age_val = try_int(out.output.decode('utf-8').rstrip("\n"))
+
+  if not out.output or (isinstance(age_val, str) and "Error" in age_val):
+    log.warning(f"Bad output from block_age... age_val={age_val}")
+    return
 
   BLOCKAGE.labels('BlockAge', miner_name).set(age_val)
   log.debug(f"age: {age_val}")
@@ -326,6 +330,11 @@ def collect_ledger_validators(miner_name):
   # ledger validators output
   out = read_file('ledger_validators.csv')
   results = out.output.decode('utf-8').split("\n")
+
+  if not results or not results[0] or "failed" in results[0]:
+    log.warning(f"Failed to fetch 'ledger validators', results[0]={results[0]}")
+    return
+
   # parse the ledger validators output
   for line in [x.rstrip("\r\n") for x in results]:
     c = line.split(',')
