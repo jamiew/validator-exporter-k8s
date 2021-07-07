@@ -79,7 +79,7 @@ def try_float(v):
   return v
 
 def read_file(command):
-  log.debug(f"read_file dir={STATS_DIR} command={command}")
+  # log.debug(f"read_file dir={STATS_DIR} command={command}")
   filename = STATS_DIR + "/" + command
   text = ""
   try:
@@ -114,10 +114,9 @@ def get_facts():
 
     # := requires py3.8
     if m := re.match(r'{([^,]+),"([^"]+)"}.', strline):
-      log.debug(m)
       k = m.group(1)
       v = m.group(2)
-      log.debug(k,v)
+      log.debug(f"get_facts: {k}={v}")
       printkeys[k] = v
 
   if v := printkeys.get('pubkey'):
@@ -175,7 +174,7 @@ def collect_chain_stats():
   CHAIN_STATS.labels('staked_validators').set(count_val)
 
 def collect_balance(addr, miner_name):
-  log.debug(f"collect_balance: making API request for addr={addr} miner_name={miner_name}...")
+  log.debug(f"making API request for addr={addr} miner_name={miner_name}...")
   api_validators = safe_get_json(f'{API_BASE_URL}/validators/{addr}')
   if not api_validators:
     log.error("validator fetch returned empty JSON")
@@ -193,8 +192,8 @@ def collect_balance(addr, miner_name):
     log.debug("api accounts missing data or balance?")
     return
   balance = float(api_accounts['data']['balance'])/1E8
-  log.debug(f'collect_balance api_accounts={api_accounts}')
-  log.debug(f'collect_balance balance={balance}')
+  log.debug(f'api_accounts={api_accounts}')
+  log.debug(f'balance={balance}')
   BALANCE.labels(miner_name).set(balance)
 
 def get_miner_name():
@@ -224,7 +223,7 @@ def collect_in_consensus(miner_name):
   incon = 0
   if incon_txt == 'true':
     incon = 1
-  log.debug(f"in consensus? {incon} / {incon_txt}")
+  log.debug(f"in_consensus? {incon} / {incon_txt}")
   INCON.labels(miner_name).set(incon)
 
 def collect_block_age(miner_name):
@@ -238,7 +237,7 @@ def collect_block_age(miner_name):
     return
 
   BLOCKAGE.labels('BlockAge', miner_name).set(age_val)
-  log.debug(f"age: {age_val}")
+  log.debug(f"block_age: {age_val}")
 
 # persist these between calls
 hval = {}
@@ -279,8 +278,8 @@ def collect_hbbft_performance(miner_name):
     elif len(line) == 0:
       # empty line
       pass
-    else:
-      log.debug(f"wrong len ({len(c)}) and wrong miner_name ({miner_name}) for hbbft: {c}")
+    # else:
+    #    log.debug(f"wrong len ({len(c)}) and wrong miner_name ({miner_name}) for hbbft: {c}")
 
     # always set these, that way they get reset when out of CG
     HBBFT_PERF.labels('hbbft_perf','Penalty', miner_name).set(hval.get('pen_val', 0))
@@ -328,7 +327,7 @@ def collect_peer_book(miner_name):
     else:
       log.debug(f"could not understand peer book line: {c}")
 
-  log.debug(f"sess: {sessions}")
+  log.debug(f"p2p sessions: {sessions}")
   SESSIONS.labels('sessions', miner_name).set(sessions)
 
 def collect_ledger_validators(miner_name):
@@ -351,7 +350,7 @@ def collect_ledger_validators(miner_name):
 
       (val_name,address,last_heartbeat,stake,status,version,tenure_penalty,dkg_penalty,performance_penalty,total_penalty) = c
       if miner_name == val_name:
-        log.debug(f"have pen line: {c}")
+        log.debug(f"have penalty line: {c}")
         tenure_penalty_val = try_float(tenure_penalty)
         dkg_penalty_val = try_float(dkg_penalty)
         performance_penalty_val = try_float(performance_penalty)
