@@ -23,6 +23,13 @@ if not os.path.isdir(STATS_DIR):
   log.error(f"STATS_DIR is not a real directory: {STATS_DIR}")
   exit(1)
 
+# exposed by Kubernetes environment variables
+POD_NAME = os.environ.get('POD_NAME')
+NODE_NAME = os.environ.get('NODE_NAME')
+if not POD_NAME or not NODE_NAME:
+  log.error('NODE_NAME and/or POD_NAME env variables are missing')
+  exit(1)
+
 # time to sleep between scrapes
 UPDATE_PERIOD = int(os.environ.get('UPDATE_PERIOD', 30))
 VALIDATOR_CONTAINER_NAME = os.environ.get('VALIDATOR_CONTAINER_NAME', 'validator')
@@ -35,37 +42,41 @@ API_BASE_URL = os.environ.get('API_BASE_URL', 'https://api.helium.io/v1')
 ENABLE_RPC = os.environ.get('ENABLE_RPC', 0)
 
 # prometheus exporter types Gauge,Counter,Summary,Histogram,Info and Enum
-SCRAPE_TIME = prometheus_client.Summary('validator_scrape_time', 'Time spent collecting miner data')
+SCRAPE_TIME = prometheus_client.Summary('validator_scrape_time',
+                              'Time spent collecting miner data')
 CHAIN_STATS = prometheus_client.Gauge('chain_stats',
-                              'Stats about the global chain', ['resource_type'])
+                              'Stats about the global chain',
+                              ['resource_type'])
 VAL = prometheus_client.Gauge('validator_height',
                               "Height of the validator's blockchain",
-                              ['resource_type','validator_name'])
+                              ['resource_type', 'validator_name', 'pod_name', 'node_name'])
 INCON = prometheus_client.Gauge('validator_inconsensus',
                               'Is validator currently in consensus group',
-                              ['validator_name'])
+                              ['validator_name', 'pod_name', 'node_name'])
 BLOCKAGE = prometheus_client.Gauge('validator_block_age',
                               'Age of the current block',
-                             ['resource_type','validator_name'])
+                             ['resource_type', 'validator_name', 'pod_name', 'node_name'])
 HBBFT_PERF = prometheus_client.Gauge('validator_hbbft_perf',
                               'HBBFT performance metrics from perf, only applies when in CG',
-                             ['resource_type','subtype','validator_name'])
+                             ['resource_type', 'subtype', 'validator_name', 'pod_name', 'node_name'])
 CONNECTIONS = prometheus_client.Gauge('validator_connections',
                               'Number of libp2p connections ',
-                             ['resource_type','validator_name'])
+                             ['resource_type', 'validator_name', 'pod_name', 'node_name'])
 SESSIONS = prometheus_client.Gauge('validator_sessions',
                               'Number of libp2p sessions',
-                             ['resource_type','validator_name'])
+                             ['resource_type', 'validator_name', 'pod_name', 'node_name'])
 LEDGER_PENALTY = prometheus_client.Gauge('validator_ledger',
                               'Validator performance metrics ',
-                             ['resource_type', 'subtype','validator_name'])
+                             ['resource_type', 'subtype', 'validator_name', 'pod_name', 'node_name'])
 VALIDATOR_VERSION = prometheus_client.Info('validator_version',
-                              'Version number of the miner container',['validator_name'])
+                              'Version number of the miner container',
+                              ['validator_name', 'pod_name', 'node_name'])
 BALANCE = prometheus_client.Gauge('validator_api_balance',
-                              'Balance of the validator owner account',['validator_name', 'validator_address', 'owner_address'])
+                              'Balance of the validator owner account',
+                              ['owner_address', 'validator_name', 'pod_name', 'node_name'])
 UPTIME = prometheus_client.Gauge('validator_container_uptime',
                               'Time container has been at a given state',
-                              ['state_type','validator_name'])
+                              ['state_type', 'validator_name', 'pod_name', 'node_name'])
 miner_facts = {}
 
 def try_int(v):
@@ -193,7 +204,7 @@ def collect_balance(addr, miner_name):
     return
   balance = float(api_accounts['data']['balance'])/1E8
   log.debug(f'balance={balance}')
-  BALANCE.labels(miner_name, addr, owner).set(balance)
+  BALANCE.labels(owner, miner_name, POD_NAME, NODE_NAME).set(balance)
 
 def get_miner_name():
   # need to fix this. hotspot name really should only be queried once
@@ -211,7 +222,7 @@ def collect_miner_height(miner_name):
   if not txt or (isinstance(txt, str) and "Error" in txt or "failed" in txt):
     log.warning("bad output from info_height: {out.output")
     return
-  VAL.labels('Height', miner_name).set(out.output.split()[1])
+  VAL.labels('Height', miner_name, POD_NAME, NODE_NAME).set(out.output.split()[1])
 
 def collect_in_consensus(miner_name):
   # check if currently in consensus group
@@ -223,7 +234,7 @@ def collect_in_consensus(miner_name):
   if incon_txt == 'true':
     incon = 1
   log.debug(f"in_consensus? {incon} / {incon_txt}")
-  INCON.labels(miner_name).set(incon)
+  INCON.labels(miner_name, POD_NAME, NODE_NAME).set(incon)
 
 def collect_block_age(miner_name):
   # collect current block age
@@ -235,7 +246,7 @@ def collect_block_age(miner_name):
     log.warning(f"Bad output from block_age... age_val={age_val}")
     return
 
-  BLOCKAGE.labels('BlockAge', miner_name).set(age_val)
+  BLOCKAGE.labels('BlockAge', miner_name, POD_NAME, NODE_NAME).set(age_val)
   log.debug(f"block_age: {age_val}")
 
 # persist these between calls
@@ -281,14 +292,14 @@ def collect_hbbft_performance(miner_name):
     #    log.debug(f"wrong len ({len(c)}) and wrong miner_name ({miner_name}) for hbbft: {c}")
 
     # always set these, that way they get reset when out of CG
-    HBBFT_PERF.labels('hbbft_perf','Penalty', miner_name).set(hval.get('pen_val', 0))
-    HBBFT_PERF.labels('hbbft_perf','BBA_Total', miner_name).set(hval.get('bba_tot', 0))
-    HBBFT_PERF.labels('hbbft_perf','BBA_Votes', miner_name).set(hval.get('bba_votes', 0))
-    HBBFT_PERF.labels('hbbft_perf','Seen_Total', miner_name).set(hval.get('seen_tot', 0))
-    HBBFT_PERF.labels('hbbft_perf','Seen_Votes', miner_name).set(hval.get('seen_votes', 0))
-    HBBFT_PERF.labels('hbbft_perf','BBA_Last', miner_name).set(hval.get('bba_last_val', 0))
-    HBBFT_PERF.labels('hbbft_perf','Seen_Last', miner_name).set(hval.get('seen_last_val', 0))
-    HBBFT_PERF.labels('hbbft_perf','Tenure', miner_name).set(hval.get('tenure', 0))
+    HBBFT_PERF.labels('hbbft_perf','Penalty', miner_name, POD_NAME, NODE_NAME).set(hval.get('pen_val', 0))
+    HBBFT_PERF.labels('hbbft_perf','BBA_Total', miner_name, POD_NAME, NODE_NAME).set(hval.get('bba_tot', 0))
+    HBBFT_PERF.labels('hbbft_perf','BBA_Votes', miner_name, POD_NAME, NODE_NAME).set(hval.get('bba_votes', 0))
+    HBBFT_PERF.labels('hbbft_perf','Seen_Total', miner_name, POD_NAME, NODE_NAME).set(hval.get('seen_tot', 0))
+    HBBFT_PERF.labels('hbbft_perf','Seen_Votes', miner_name, POD_NAME, NODE_NAME).set(hval.get('seen_votes', 0))
+    HBBFT_PERF.labels('hbbft_perf','BBA_Last', miner_name, POD_NAME, NODE_NAME).set(hval.get('bba_last_val', 0))
+    HBBFT_PERF.labels('hbbft_perf','Seen_Last', miner_name, POD_NAME, NODE_NAME).set(hval.get('seen_last_val', 0))
+    HBBFT_PERF.labels('hbbft_perf','Tenure', miner_name, POD_NAME, NODE_NAME).set(hval.get('tenure', 0))
 
 def collect_peer_book(miner_name):
   # peer book -s output
@@ -312,7 +323,7 @@ def collect_peer_book(miner_name):
       conns_num = try_int(connections)
 
       if miner_name == peer_name and isinstance(conns_num, int):
-        CONNECTIONS.labels('connections', miner_name).set(conns_num)
+        CONNECTIONS.labels('connections', miner_name, POD_NAME, NODE_NAME).set(conns_num)
 
     elif len(c) == 4:
       # local,remote,p2p,name
@@ -327,7 +338,7 @@ def collect_peer_book(miner_name):
       log.debug(f"could not understand peer book line: {c}")
 
   log.debug(f"p2p sessions: {sessions}")
-  SESSIONS.labels('sessions', miner_name).set(sessions)
+  SESSIONS.labels('sessions', miner_name, POD_NAME, NODE_NAME).set(sessions)
 
 def collect_ledger_validators(miner_name):
   # ledger validators output
@@ -357,11 +368,11 @@ def collect_ledger_validators(miner_name):
         least_heartbeat=try_float(last_heartbeat)
 
         log.info(f"L penalty: {total_penalty_val}")
-        LEDGER_PENALTY.labels('ledger_penalties', 'tenure', miner_name).set(tenure_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'dkg', miner_name).set(dkg_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'performance', miner_name).set(performance_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'total', miner_name).set(total_penalty_val)
-        BLOCKAGE.labels('last_heartbeat', miner_name).set(last_heartbeat)
+        LEDGER_PENALTY.labels('ledger_penalties', 'tenure', miner_name, POD_NAME, NODE_NAME).set(tenure_penalty_val)
+        LEDGER_PENALTY.labels('ledger_penalties', 'dkg', miner_name, POD_NAME, NODE_NAME).set(dkg_penalty_val)
+        LEDGER_PENALTY.labels('ledger_penalties', 'performance', miner_name, POD_NAME, NODE_NAME).set(performance_penalty_val)
+        LEDGER_PENALTY.labels('ledger_penalties', 'total', miner_name, POD_NAME, NODE_NAME).set(total_penalty_val)
+        BLOCKAGE.labels('last_heartbeat', miner_name, POD_NAME, NODE_NAME).set(last_heartbeat)
 
     elif len(line) == 0:
       # empty lines are fine
@@ -381,7 +392,7 @@ def collect_miner_version(miner_name):
     if m := re.match('^\*\s+([\d\.]+)(.*)', line):
       miner_version = m.group(1)
       log.debug(f"found miner version: {miner_version}")
-      VALIDATOR_VERSION.labels(miner_name).info({'version': miner_version})
+      VALIDATOR_VERSION.labels(miner_name, POD_NAME, NODE_NAME).info({'version': miner_version})
 
 
 if __name__ == '__main__':
