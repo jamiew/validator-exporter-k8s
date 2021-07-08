@@ -62,7 +62,7 @@ LEDGER_PENALTY = prometheus_client.Gauge('validator_ledger',
 VALIDATOR_VERSION = prometheus_client.Info('validator_version',
                               'Version number of the miner container',['validator_name'])
 BALANCE = prometheus_client.Gauge('validator_api_balance',
-                              'Balance of the validator owner account',['validator_name', 'address'])
+                              'Balance of the validator owner account',['validator_name', 'validator_address', 'owner_address'])
 UPTIME = prometheus_client.Gauge('validator_container_uptime',
                               'Time container has been at a given state',
                               ['state_type','validator_name'])
@@ -193,7 +193,7 @@ def collect_balance(addr, miner_name):
     return
   balance = float(api_accounts['data']['balance'])/1E8
   log.debug(f'balance={balance}')
-  BALANCE.labels(miner_name, addr).set(balance)
+  BALANCE.labels(miner_name, addr, owner).set(balance)
 
 def get_miner_name():
   # need to fix this. hotspot name really should only be queried once
