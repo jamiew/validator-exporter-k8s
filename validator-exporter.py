@@ -49,34 +49,34 @@ CHAIN_STATS = prometheus_client.Gauge('chain_stats',
                               ['resource_type'])
 VAL = prometheus_client.Gauge('validator_height',
                               "Height of the validator's blockchain",
-                              ['resource_type', 'validator_name', 'pod_name', 'node_name'])
+                              ['resource_type', 'validator_name', 'pod', 'node'])
 INCON = prometheus_client.Gauge('validator_inconsensus',
                               'Is validator currently in consensus group',
-                              ['validator_name', 'pod_name', 'node_name'])
+                              ['validator_name', 'pod', 'node'])
 BLOCKAGE = prometheus_client.Gauge('validator_block_age',
                               'Age of the current block',
-                             ['resource_type', 'validator_name', 'pod_name', 'node_name'])
+                             ['resource_type', 'validator_name', 'pod', 'node'])
 HBBFT_PERF = prometheus_client.Gauge('validator_hbbft_perf',
                               'HBBFT performance metrics from perf, only applies when in CG',
-                             ['resource_type', 'subtype', 'validator_name', 'pod_name', 'node_name'])
+                             ['resource_type', 'subtype', 'validator_name', 'pod', 'node'])
 CONNECTIONS = prometheus_client.Gauge('validator_connections',
                               'Number of libp2p connections ',
-                             ['resource_type', 'validator_name', 'pod_name', 'node_name'])
+                             ['resource_type', 'validator_name', 'pod', 'node'])
 SESSIONS = prometheus_client.Gauge('validator_sessions',
                               'Number of libp2p sessions',
-                             ['resource_type', 'validator_name', 'pod_name', 'node_name'])
+                             ['resource_type', 'validator_name', 'pod', 'node'])
 LEDGER_PENALTY = prometheus_client.Gauge('validator_ledger',
                               'Validator performance metrics ',
-                             ['resource_type', 'subtype', 'validator_name', 'pod_name', 'node_name'])
+                             ['resource_type', 'subtype', 'validator', 'pod', 'node'])
 VALIDATOR_VERSION = prometheus_client.Info('validator_version',
                               'Version number of the miner container',
-                              ['validator_name', 'pod_name', 'node_name'])
+                              ['validator_name', 'pod', 'node'])
 BALANCE = prometheus_client.Gauge('validator_api_balance',
                               'Balance of the validator owner account',
-                              ['owner_address', 'validator_name', 'pod_name', 'node_name'])
+                              ['owner_address', 'validator_name', 'pod', 'node'])
 UPTIME = prometheus_client.Gauge('validator_container_uptime',
                               'Time container has been at a given state',
-                              ['state_type', 'validator_name', 'pod_name', 'node_name'])
+                              ['state_type', 'validator_name', 'pod', 'node'])
 miner_facts = {}
 
 def try_int(v):
