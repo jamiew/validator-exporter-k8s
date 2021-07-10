@@ -67,7 +67,7 @@ SESSIONS = prometheus_client.Gauge('validator_sessions',
                              ['resource_type', 'validator_name', 'pod', 'node'])
 LEDGER_PENALTY = prometheus_client.Gauge('validator_ledger',
                               'Validator performance metrics ',
-                             ['resource_type', 'subtype', 'validator', 'pod', 'node'])
+                             ['resource_type', 'subtype', 'validator_name', 'pod', 'node'])
 VALIDATOR_VERSION = prometheus_client.Info('validator_version',
                               'Version number of the miner container',
                               ['validator_name', 'pod', 'node'])
