@@ -288,9 +288,11 @@ def collect_hbbft_performance(miner_name):
 
   for line in out.output.decode('utf-8').split("\n"):
     c = [x.strip() for x in line.split(',')]
-    # samples:
-
-    if len(c) == 7 and miner_name == c[0]:
+    miner_name = c[0] # FIXME
+    if c[0] == 'name':
+      log.debug(f'skipping header row')
+      pass
+    elif len(c) == 7:
       # name,bba_completions,seen_votes,last_bba,last_seen,tenure,penalty
       # great-clear-chinchilla,5/5,237/237,0,0,2.91,2.91
       log.debug(f"resl7: {c}; {miner_name}/{c[0]}")
@@ -301,25 +303,22 @@ def collect_hbbft_performance(miner_name):
       hval['seen_last_val']=try_float(c[4])
       hval['tenure'] = try_float(c[5])
       hval['pen_val'] = try_float(c[6])
-    elif len(c) == 6 and miner_name == c[0]:
+    elif len(c) == 6:
       # name,bba_completions,seen_votes,last_bba,last_seen,penalty
       # curly-peach-owl,11/11,368/368,0,0,1.86
       log.debug(f"resl6: {c}; {miner_name}/{c[0]}")
-
       (hval['bba_votes'],hval['bba_tot'])=c[1].split("/")
       (hval['seen_votes'],hval['seen_tot'])=c[2].split("/")
       hval['bba_last_val']=try_float(c[3])
       hval['seen_last_val']=try_float(c[4])
       hval['pen_val'] = try_float(c[5])
 
-    elif len(c) == 6:
-      # not our line
-      pass
     elif len(line) == 0:
       # empty line
+      log.debug(f'length is 0, skipping')
       pass
-    # else:
-    #    log.debug(f"wrong len ({len(c)}) and wrong miner_name ({miner_name}) for hbbft: {c}")
+    else:
+       log.debug(f"don't know how to handle this line: {c}")
 
     # always set these, that way they get reset when out of CG
     HBBFT_PERF.labels('hbbft_perf','Penalty', miner_name, POD_NAME, NODE_NAME).set(hval.get('pen_val', 0))
@@ -389,20 +388,21 @@ def collect_ledger_validators(miner_name):
         continue
 
       (val_name,address,last_heartbeat,stake,status,version,tenure_penalty,dkg_penalty,performance_penalty,total_penalty) = c
-      if miner_name == val_name:
-        log.debug(f"have penalty line: {c}")
+      if True: # miner_name == val_name:
+        miner_name = val_name # FIXME
+        log.debug(f"have penalty line for {miner_name}: {c}")
         tenure_penalty_val = try_float(tenure_penalty)
         dkg_penalty_val = try_float(dkg_penalty)
         performance_penalty_val = try_float(performance_penalty)
         total_penalty_val = try_float(total_penalty)
         least_heartbeat=try_float(last_heartbeat)
 
-        log.info(f"L penalty: {total_penalty_val}")
+        log.debug(f"L {miner_name} penalty: {total_penalty_val}")
         LEDGER_PENALTY.labels('ledger_penalties', 'tenure', miner_name, POD_NAME, NODE_NAME).set(tenure_penalty_val)
         LEDGER_PENALTY.labels('ledger_penalties', 'dkg', miner_name, POD_NAME, NODE_NAME).set(dkg_penalty_val)
         LEDGER_PENALTY.labels('ledger_penalties', 'performance', miner_name, POD_NAME, NODE_NAME).set(performance_penalty_val)
         LEDGER_PENALTY.labels('ledger_penalties', 'total', miner_name, POD_NAME, NODE_NAME).set(total_penalty_val)
-        BLOCKAGE.labels('last_heartbeat', miner_name, POD_NAME, NODE_NAME).set(last_heartbeat)
+        # BLOCKAGE.labels('last_heartbeat', miner_name, POD_NAME, NODE_NAME).set(last_heartbeat)
 
     elif len(line) == 0:
       # empty lines are fine
