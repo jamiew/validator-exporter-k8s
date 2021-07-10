@@ -11,7 +11,7 @@ if [ ! -z $SAVE_STATS ]; then
   # container="docker ps --format '{{ .Names }}' | grep validator-0 | grep -v exporter"
   # j/k let's just use kube pod names instead
   container="validator-0"
+  ./save-stats.sh $container
 fi
 
-./save-stats.sh $container
 ./validator-exporter.py
