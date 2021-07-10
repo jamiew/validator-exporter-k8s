@@ -1,6 +1,6 @@
 # validator-exporter-k8s
 
-Prometheus exporter for a [Helium validator)](https://github.com/helium/miner), specifically one running inside a Kubernetes (k8s) cluster configured using [caseypugh/helium-validator-k8s](https://github.com/caseypugh/helium-validator-k8s). 
+Prometheus exporter for a [Helium validator](https://helium.com/stake), specifically one running inside a Kubernetes (k8s) cluster configured using [caseypugh/helium-validator-k8s](https://github.com/caseypugh/helium-validator-k8s).
 
 Forked from [tedder/miner_exporter](https://github.com/tedder/miner_exporter) - thank you for sharing your work. The original scrapes metrics directly from a Docker container; to be Kubernetes-compatible, this fork scrapes from static files exported by the validator container. When possible we'll switch to using the validator's JSON-RPC, and these two forks can likely be merged.
 
