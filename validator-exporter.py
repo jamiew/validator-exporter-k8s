@@ -71,8 +71,11 @@ VALIDATOR_VERSION = prometheus_client.Info('validator_version',
                               'Version number of the miner container',
                               ['validator_name', 'pod', 'node'])
 BALANCE = prometheus_client.Gauge('validator_api_balance',
-                              'Balance of the validator owner account',
-                              ['owner_address', 'validator_name', 'pod', 'node'])
+                              'Balance of the validator owner account (from Helium API)',
+                              ['validator_addr', 'validator_name', 'owner_address', 'pod', 'node'])
+REWARDS = prometheus_client.Gauge('validator_api_rewards',
+                              'Rewards for the validator (from Helium API)',
+                              ['validator_addr', 'validator_name', 'pod', 'node'])
 UPTIME = prometheus_client.Gauge('validator_container_uptime',
                               'Time container has been at a given state',
                               ['state_type', 'validator_name', 'pod', 'node'])
@@ -154,8 +157,10 @@ def stats():
   collect_peer_book(hotspot_name_str)
   collect_hbbft_performance(hotspot_name_str)
   collect_balance(miner_facts['address'], hotspot_name_str)
+  collect_rewards(miner_facts['address'], hotspot_name_str)
 
 def safe_get_json(url):
+  # TODO always debug this request - how long it took, response status code, response bytes
   try:
     ret = requests.get(url)
     if not ret.status_code == requests.codes.ok:
@@ -183,27 +188,57 @@ def collect_chain_stats():
   count_val = api['data']['staked']['count']
   CHAIN_STATS.labels('staked_validators').set(count_val)
 
-def collect_balance(addr, miner_name):
-  log.debug(f"making API request for addr={addr} miner_name={miner_name}...")
-  api_validators = safe_get_json(f'{API_BASE_URL}/validators/{addr}')
+def collect_balance(validator_addr, miner_name):
+  api_validators = safe_get_json(f'{API_BASE_URL}/validators/{validator_addr}')
   if not api_validators:
     log.error("validator fetch returned empty JSON")
     return
   elif not api_validators.get('data') or not api_validators['data'].get('owner'):
     log.error("could not find validator data owner in json")
     return
-  owner = api_validators['data']['owner']
+  owner_addr = api_validators['data']['owner']
 
-  api_accounts = safe_get_json(f'{API_BASE_URL}/accounts/{owner}')
+  api_accounts = safe_get_json(f'{API_BASE_URL}/accounts/{owner_addr}')
   if not api_accounts:
-    log.debug("No api_accounts?")
+    log.warning(f"no api_accounts. bad result from Helium API? {api_accounts}")
     return
-  if not api_accounts.get('data') or not api_accounts['data'].get('balance'):
-    log.debug("api accounts missing data or balance?")
+  elif not api_accounts.get('data') or not api_accounts['data'].get('balance'):
+    log.debug(f"api_accounts missing data or balance {api_accounts}")
     return
+
   balance = float(api_accounts['data']['balance'])/1E8
   log.debug(f'balance={balance}')
-  BALANCE.labels(owner, miner_name, POD_NAME, NODE_NAME).set(balance)
+  BALANCE.labels(validator_addr, owner_addr, miner_name, POD_NAME, NODE_NAME).set(balance)
+
+def collect_rewards(validator_addr, miner_name):
+  min_time = "2020-01-01"
+  max_time = "2050-01-01" # make sure to update this in 2050
+  base_url = f'{API_BASE_URL}/validators/{validator_addr}/rewards?min_time={min_time}&max_time={max_time}'
+  rewards = 0
+  cursor = ''
+  loop_count = 0
+  while True:
+    url = f"{base_url}&cursor={cursor}" if cursor else base_url
+    log.debug(f'making request to {url}')
+    json = safe_get_json(url)
+    if not json:
+      log.error(f"could not fetch validator rewards from Helium API. json={json}")
+      return
+
+    data = json.get('data')
+    for x in data:
+      rewards += x.get('amount')
+    cursor = json.get('cursor')
+    time.sleep(0.25)
+    loop_count += 1
+
+    if not cursor:
+      log.debug(f"response missing cursor, aborting loop")
+      break
+
+  # TODO finish me
+  log.info(f'collect_rewards rewards={rewards} loop_count={loop_count}')
+  REWARDS.labels(validator_addr, miner_name, POD_NAME, NODE_NAME).set(rewards)
 
 def get_miner_name():
   # need to fix this. hotspot name really should only be queried once
