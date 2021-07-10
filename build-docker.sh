@@ -1,5 +1,5 @@
 #!/bin/bash
-# 
+# run to build local Docker image
 # to publish to docker hub, try:
 # PUBLISH=1 ./build.sh
 # 

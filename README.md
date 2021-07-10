@@ -23,18 +23,11 @@ pip install -r requirements.txt
 Then, if you're connected to a [helium-validators kubernetes cluster](https://github.com/caseypugh/helium-validators), you can do a quick test using:
 
 ```
-./save-stats.sh
-```
+SAVE_STATS=1 ./test-run.sh
 ```
 
-This captures stats from the `validator-0` pod and then tries to serve them using our local `validator-exporter.py` prometheus endpoint
+This captures stats from the `validator-0` pod (`save-stats.sh`), exports some sample values for ENV variables normally exposed by the k8s cluster, then runs the `validator-exporter.py` server.
 
-
-Then run the exporter, with some default ENV variables normally exposed by the k8s cluster:
-
-```
-./test-run.sh
-```
 
 ## Configuration
 
@@ -45,7 +38,6 @@ DEBUG # set to 1 to show additional logging
 UPDATE_PERIOD  # seconds between scrapes, int
 STATS_DIR # where the stats files are saved; test run uses ./stats
 API_BASE_URL # URL for Helium API. For testnet, set to "https://testnet-api.helium.wtf/v1"
-ENABLE_RPC # opt in to using the RPC API with a truthy value (defaults to falsey value until `exec` calls are fully replaced).
 ```
 
 ## Build on Docker Hub (CI)
