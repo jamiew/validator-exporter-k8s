@@ -14,4 +14,10 @@ if [ ! -z $SAVE_STATS ]; then
   ./save-stats.sh $container
 fi
 
-./validator-exporter.py
+./validator-exporter.py &
+exporter_pid=$!
+echo "exporter_pid=$exporter_pid"
+sleep 3
+curl localhost:9825
+kill $exporter_pid
+wait
