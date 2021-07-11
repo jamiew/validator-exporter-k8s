@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# intended to be used alongside https://github.com/caseypugh/helium-validator-k8s
 
 # external packages
 import prometheus_client
@@ -18,12 +19,13 @@ log.setLevel(logging.DEBUG if os.environ.get('DEBUG') else logging.INFO)
 log.info("validator-exporter starting up...!")
 
 # where the validator container stashes its stats files
+# in k8s these are regularly written to disk by the validator container
 STATS_DIR = os.environ.get('STATS_DIR', '/var/data/stats')
 if not os.path.isdir(STATS_DIR):
   log.error(f"STATS_DIR is not a real directory: {STATS_DIR}")
   exit(1)
 
-# exposed by Kubernetes environment variables
+# required host info ENV vars typically exposed by k8s
 POD_NAME = os.environ.get('POD_NAME')
 NODE_NAME = os.environ.get('NODE_NAME')
 if not POD_NAME or not NODE_NAME:
@@ -35,6 +37,11 @@ UPDATE_PERIOD = int(os.environ.get('UPDATE_PERIOD', 30))
 
 # for testnet, https://testnet-api.helium.wtf/v1
 API_BASE_URL = os.environ.get('API_BASE_URL', 'https://api.helium.io/v1')
+
+# Gather the ledger penalities for all, instead of just "this" validator. When in this
+# mode all validators from `miner validator ledger` with a penalty >0.0 will be included.
+# The >0 constraint is just to keep data and traffic smaller.
+ALL_PENALTIES = os.environ.get('ALL_PENALTIES', 0)
 
 # prometheus exporter types Gauge,Counter,Summary,Histogram,Info and Enum
 SCRAPE_TIME = prometheus_client.Summary('validator_scrape_time',
@@ -370,7 +377,6 @@ def collect_peer_book(miner_name):
   SESSIONS.labels('sessions', miner_name, POD_NAME, NODE_NAME).set(sessions)
 
 def collect_ledger_validators(miner_name):
-  # ledger validators output
   out = read_file('ledger_validators.csv')
   results = out.output.decode('utf-8').split("\n")
 
@@ -378,31 +384,33 @@ def collect_ledger_validators(miner_name):
     log.warning(f"Failed to fetch 'ledger validators', results[0]={results[0]}")
     return
 
-  # parse the ledger validators output
   for line in [x.rstrip("\r\n") for x in results]:
     c = line.split(',')
-    #print(f"{len(c)} {c}")
     if len(c) == 10:
       if c[0] == 'name' and c[1] == 'owner_address':
-        # header line
+        # header line, please skip
         continue
 
       (val_name,address,last_heartbeat,stake,status,version,tenure_penalty,dkg_penalty,performance_penalty,total_penalty) = c
-      if True: # miner_name == val_name:
-        miner_name = val_name # FIXME
-        log.debug(f"have penalty line for {miner_name}: {c}")
+      if ALL_PENALTIES or miner_name == val_name:
+        log.debug(f"have penalty line for {val_name}: {c}")
         tenure_penalty_val = try_float(tenure_penalty)
         dkg_penalty_val = try_float(dkg_penalty)
         performance_penalty_val = try_float(performance_penalty)
         total_penalty_val = try_float(total_penalty)
-        least_heartbeat=try_float(last_heartbeat)
+        least_heartbeat = try_float(last_heartbeat)
 
-        log.debug(f"L {miner_name} penalty: {total_penalty_val}")
-        LEDGER_PENALTY.labels('ledger_penalties', 'tenure', miner_name, POD_NAME, NODE_NAME).set(tenure_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'dkg', miner_name, POD_NAME, NODE_NAME).set(dkg_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'performance', miner_name, POD_NAME, NODE_NAME).set(performance_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'total', miner_name, POD_NAME, NODE_NAME).set(total_penalty_val)
-        # BLOCKAGE.labels('last_heartbeat', miner_name, POD_NAME, NODE_NAME).set(last_heartbeat)
+        log.debug(f"L {val_name} penalty: {total_penalty_val}")
+        LEDGER_PENALTY.labels('ledger_penalties', 'tenure', val_name, POD_NAME, NODE_NAME).set(tenure_penalty_val)
+        LEDGER_PENALTY.labels('ledger_penalties', 'dkg', val_name, POD_NAME, NODE_NAME).set(dkg_penalty_val)
+        LEDGER_PENALTY.labels('ledger_penalties', 'performance', val_name, POD_NAME, NODE_NAME).set(performance_penalty_val)
+        LEDGER_PENALTY.labels('ledger_penalties', 'total', val_name, POD_NAME, NODE_NAME).set(total_penalty_val)
+
+      # In an effort to reduce the number of metrics to track, only gather
+      # last_heartbear for this miner_name. Will this surprise users?
+      if miner_name == value_name:
+        log.debug("L {val_name} last_heartbeat: {last_heartbeat}")
+        BLOCKAGE.labels('last_heartbeat', val_name, POD_NAME, NODE_NAME).set(last_heartbeat)
 
     elif len(line) == 0:
       # empty lines are fine

@@ -4,6 +4,7 @@ export STATS_DIR=./stats
 export POD_NAME=validator-test-0
 export NODE_NAME=imacomputer
 export DEBUG=1
+export ALL_PENALTIES=1
 
 if [ ! -z $SAVE_STATS ]; then
   echo "Saving some fresh stats..."
