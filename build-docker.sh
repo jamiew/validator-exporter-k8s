@@ -5,7 +5,7 @@
 # 
 set -e
 
-image="jamiedubs/validator-exporter" # must match hub.docker.com repo name
+image="jamiedubs/validator-exporter-k8s" # must match hub.docker.com repo name
 tag="latest"
 
 docker build -t "$image" .

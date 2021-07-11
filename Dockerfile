@@ -2,7 +2,7 @@
 # FROM python:3-buster
 # alpine required a few tweaks but produces 50MB image
 FROM python:3-alpine
-LABEL org.opencontainers.image.source https://github.com/jamiew/validator-exporter
+LABEL org.opencontainers.image.source https://github.com/jamiew/validator-exporter-k8s
 ENV PYTHONUNBUFFERED=1
 EXPOSE 9825
 
