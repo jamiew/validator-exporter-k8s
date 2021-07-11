@@ -401,10 +401,11 @@ def collect_ledger_validators(miner_name):
         last_heartbeat = try_float(last_heartbeat)
 
         log.debug(f"L {val_name} penalty: {total_penalty_val}")
-        LEDGER_PENALTY.labels('ledger_penalties', 'tenure', val_name, POD_NAME, NODE_NAME).set(tenure_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'dkg', val_name, POD_NAME, NODE_NAME).set(dkg_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'performance', val_name, POD_NAME, NODE_NAME).set(performance_penalty_val)
-        LEDGER_PENALTY.labels('ledger_penalties', 'total', val_name, POD_NAME, NODE_NAME).set(total_penalty_val)
+        if not ALL_PENALTIES or total_penalty_val > 0.0:
+          LEDGER_PENALTY.labels('ledger_penalties', 'tenure', val_name, POD_NAME, NODE_NAME).set(tenure_penalty_val)
+          LEDGER_PENALTY.labels('ledger_penalties', 'dkg', val_name, POD_NAME, NODE_NAME).set(dkg_penalty_val)
+          LEDGER_PENALTY.labels('ledger_penalties', 'performance', val_name, POD_NAME, NODE_NAME).set(performance_penalty_val)
+          LEDGER_PENALTY.labels('ledger_penalties', 'total', val_name, POD_NAME, NODE_NAME).set(total_penalty_val)
 
       # In an effort to reduce the number of metrics to track, only gather
       # last_heartbeat for this miner_name. Will this surprise users?
