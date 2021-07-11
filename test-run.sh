@@ -1,8 +1,8 @@
 #!/bin/sh
 
 export STATS_DIR=./stats
-export POD_NAME=validator-test-0
-export NODE_NAME=imacomputer
+export POD_NAME=validator-0
+export NODE_NAME=node-pool-lolwut
 export DEBUG=1
 
 if [ ! -z $SAVE_STATS ]; then
@@ -14,10 +14,17 @@ if [ ! -z $SAVE_STATS ]; then
   ./save-stats.sh $container
 fi
 
+# run exporter in the background, but capture pid so we can cleanup
 ./validator-exporter.py &
 exporter_pid=$!
 echo "exporter_pid=$exporter_pid"
+
+# fetch the prometheus client results and sanity-check some basics
 sleep 3
-curl localhost:9825
+output=$(curl -s localhost:9825)
+# echo $output
+(echo "$output" | grep "validator_api_balance") && (echo 'found field') || (echo 'error, missing field' && exit 1)
+
+# cleanup our exporter process
 kill $exporter_pid
 wait
