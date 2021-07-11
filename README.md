@@ -1,3 +1,5 @@
+![](https://github.com/jamiew/validator-exporter-k8s/actions/workflows/builds.yml/badge.svg) ![](https://img.shields.io/docker/image-size/jamiedubs/validator-exporter-k8s/latest) ![](https://img.shields.io/docker/pulls/jamiedubs/validator-exporter-k8s.svg)
+
 # validator-exporter-k8s
 
 Prometheus exporter for a [Helium validator](https://helium.com/stake), specifically one running inside a Kubernetes (k8s) cluster configured using [caseypugh/helium-validator-k8s](https://github.com/caseypugh/helium-validator-k8s).
