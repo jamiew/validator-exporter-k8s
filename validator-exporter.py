@@ -398,7 +398,7 @@ def collect_ledger_validators(miner_name):
         dkg_penalty_val = try_float(dkg_penalty)
         performance_penalty_val = try_float(performance_penalty)
         total_penalty_val = try_float(total_penalty)
-        least_heartbeat = try_float(last_heartbeat)
+        last_heartbeat = try_float(last_heartbeat)
 
         log.debug(f"L {val_name} penalty: {total_penalty_val}")
         LEDGER_PENALTY.labels('ledger_penalties', 'tenure', val_name, POD_NAME, NODE_NAME).set(tenure_penalty_val)
@@ -407,7 +407,7 @@ def collect_ledger_validators(miner_name):
         LEDGER_PENALTY.labels('ledger_penalties', 'total', val_name, POD_NAME, NODE_NAME).set(total_penalty_val)
 
       # In an effort to reduce the number of metrics to track, only gather
-      # last_heartbear for this miner_name. Will this surprise users?
+      # last_heartbeat for this miner_name. Will this surprise users?
       if miner_name == value_name:
         log.debug("L {val_name} last_heartbeat: {last_heartbeat}")
         BLOCKAGE.labels('last_heartbeat', val_name, POD_NAME, NODE_NAME).set(last_heartbeat)
