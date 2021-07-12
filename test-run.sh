@@ -32,7 +32,11 @@ function check_output() {
   # local output="$1"
   local field_name="$2"
   echo -n "Checking $field_name: "
-  (echo "$output" | grep "$field_name" >/dev/null) && (echo "✅") || (echo "❌"; exit 1)
+  match=$(echo "$output" | grep "$field_name")
+  # last space-delimited field is our actual output value
+  # value=$(echo "$match" | awk '{ print $NF }')
+  # echo -n "$value "
+  [ -n "$match" ] && (echo "✅") || (echo "❌"; exit 1)
 }
 
 echo
