@@ -6,7 +6,7 @@ Prometheus exporter for a [Helium validator](https://helium.com/stake), specific
 
 Forked from [tedder/miner_exporter](https://github.com/tedder/miner_exporter) - thank you for sharing your work. The original scrapes metrics directly from a Docker container; to be Kubernetes-compatible, this fork scrapes from static files exported by the validator container. When possible we'll switch to using the validator's JSON-RPC, and these two forks can likely be merged.
 
-Docker builds of this repository are automatically build and published to Docker Hub: [jamiedubs/validator-exporter](https://hub.docker.com/r/jamiedubs/validator-exporter)
+Docker builds of this repository are automatically build and published to Docker Hub: [jamiedubs/validator-exporter-k8s](https://hub.docker.com/r/jamiedubs/validator-exporter-k8s)
 
 Note [port 9825 is the 'reserved' port for this specific exporter](https://github.com/prometheus/prometheus/wiki/Default-port-allocations). Feel free to use whatever you like, of course, but you won't be able to dial 9VAL on your phone.
 
@@ -44,7 +44,7 @@ API_BASE_URL # URL for Helium API. For testnet, set to "https://testnet-api.heli
 
 ## Build on Docker Hub (CI)
 
-This repository has a GitHub action to automatically build a new image and push to [Docker Hub](https://hub.docker.com/r/jamiedubs/validator-exporter) on every commit (with no real test suite!). 
+This repository has a GitHub action to automatically build a new image and push to [Docker Hub](https://hub.docker.com/r/jamiedubs/validator-exporter-k8s) on every commit (with no real test suite!). 
 
 To configure on your own fork, create GitHub secrets for `DOCKER_USERNAME` and `DOCKER_PASSWORD`. For the password, use a [Docker Hub access token](https://hub.docker.com/settings/security)
 
