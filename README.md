@@ -44,7 +44,7 @@ API_BASE_URL # URL for Helium API. For testnet, set to "https://testnet-api.heli
 
 ## Build on Docker Hub (CI)
 
-This repository has a GitHub action to automatically build a new image and push to [Docker Hub](https://hub.docker.com/r/jamiedubs/validator-exporter) on every commit (with no real test suite!). 
+This repository has a GitHub action to automatically build a new image and push to [Docker Hub](https://hub.docker.com/r/jamiedubs/validator-exporter-k8s) on every commit (with no real test suite!). 
 
 To configure on your own fork, create GitHub secrets for `DOCKER_USERNAME` and `DOCKER_PASSWORD`. For the password, use a [Docker Hub access token](https://hub.docker.com/settings/security)
 
