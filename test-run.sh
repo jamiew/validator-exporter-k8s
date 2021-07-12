@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 export STATS_DIR=./stats
 export POD_NAME=validator-0
@@ -22,9 +22,28 @@ echo "exporter_pid=$exporter_pid"
 # fetch the prometheus client results and sanity-check some basics
 sleep 3
 output=$(curl -s localhost:9825)
-# echo $output
-(echo "$output" | grep "validator_api_balance") && (echo 'found field') || (echo 'error, missing field' && exit 1)
 
 # cleanup our exporter process
-kill $exporter_pid
-wait
+kill "$exporter_pid"
+sleep 1
+
+# then process the output and abort if things are awry
+function check_output() {
+  # local output="$1"
+  local field_name="$2"
+  echo -n "Checking $field_name: "
+  (echo "$output" | grep "$field_name" >/dev/null) && (echo "✅") || (echo "❌"; exit 1)
+}
+
+echo
+echo "Verifying output..."
+check_output "$output", "validator_block_age"
+check_output "$output", "validator_height"
+check_output "$output", "validator_inconsensus"
+check_output "$output", "validator_ledger"
+check_output "$output", "validator_hbbft_perf"
+check_output "$output", "validator_connections"
+check_output "$output", "validator_sessions"
+check_output "$output", "validator_api_balance"
+check_output "$output", "validator_api_rewards"
+echo "Everything looks good"
