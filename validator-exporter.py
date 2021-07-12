@@ -345,23 +345,25 @@ def collect_peer_book(miner_name):
   # /ip4/192.168.0.4/tcp/2154,/ip4/72.224.176.69/tcp/2154,/p2p/1YU2cE9FNrwkTr8RjSBT7KLvxwPF9i6mAx8GoaHB9G3tou37jCM,clever-sepia-bull
 
   sessions = 0
-  for line in out.output.decode('utf-8').split("\r\n"):
+  for line in out.output.decode('utf-8').split("\n"):
     c = line.split(',')
     if len(c) == 6:
-      log.debug(f"peerbook entry6: {c}")
+      # log.debug(f"peerbook entry6: {c}")
       (address,peer_name,listen_add,connections,nat,last_update) = c
       conns_num = try_int(connections)
 
+      log.debug(f"miner_name={miner_name} peer_name={peer_name} conns_num={conns_num}")
       if miner_name == peer_name and isinstance(conns_num, int):
+        log.debug(f"p2p connections: {conns_num}")
         CONNECTIONS.labels('connections', miner_name, POD_NAME, NODE_NAME).set(conns_num)
 
     elif len(c) == 4:
       # local,remote,p2p,name
-      log.debug(f"peerbook entry4: {c}")
+      # log.debug(f"peerbook entry4: {c}")
       if c[0] != 'local':
         sessions += 1
     elif len(c) == 1:
-      log.debug(f"peerbook entry1: {c}")
+      # log.debug(f"peerbook entry1: {c}")
       # listen_addrs
       pass
     else:
