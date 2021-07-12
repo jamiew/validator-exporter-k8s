@@ -204,7 +204,7 @@ def collect_balance(validator_addr, miner_name):
 
   balance = float(api_accounts['data']['balance'])/1E8
   log.debug(f'balance={balance}')
-  BALANCE.labels(validator_addr, owner_addr, miner_name, POD_NAME, NODE_NAME).set(balance)
+  BALANCE.labels(validator_addr, miner_name, owner_addr, POD_NAME, NODE_NAME).set(balance)
 
 def collect_rewards(validator_addr, miner_name):
   min_time = "2020-01-01"
