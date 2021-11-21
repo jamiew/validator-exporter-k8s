@@ -158,7 +158,10 @@ def stats():
 def safe_get_json(url):
   # TODO always debug this request - how long it took, response status code, response bytes
   try:
-    ret = requests.get(url)
+    headers = {
+      'User-Agent': 'validator-exporter-k8s <https://github.com/jamiew/validator-exporter-k8s>',
+    }
+    ret = requests.get(url, headers=headers)
     if not ret.status_code == requests.codes.ok:
       log.error(f"bad status code ({ret.status_code}) from url: {url}")
       return
